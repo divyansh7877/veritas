@@ -20,7 +20,9 @@ async def ingest_document(project_id: str, file: UploadFile = File(...)):
     storage_path = f"{project_id}/{file.filename}"
 
     db = get_supabase()
-    db.storage.from_(STORAGE_BUCKET).upload(storage_path, content)
+    db.storage.from_(STORAGE_BUCKET).upload(
+        storage_path, content, {"upsert": "true"}
+    )
 
     text = content.decode("utf-8", errors="replace")
     summary = summarize_document(text)

@@ -1,6 +1,14 @@
 import json
+import re
 from ai_sdk import generate_text
 from app.agents.base import get_model, is_mock
+
+
+def _extract_json(text: str) -> str:
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+    if match:
+        return match.group(1).strip()
+    return text.strip()
 
 WRITER_PROMPT = (
     "You are a technical specification writer. Generate a comprehensive markdown specification "
@@ -100,7 +108,8 @@ def detect_impacted_departments(change_description: str) -> list[str]:
         prompt=IMPACT_PROMPT.format(change_description=change_description),
     )
     try:
-        parsed = json.loads(result.text)
+        cleaned = _extract_json(result.text)
+        parsed = json.loads(cleaned)
         if isinstance(parsed, list):
             return parsed
         return ["Environmental", "C-Suite", "Engineering"]
