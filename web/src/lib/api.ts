@@ -62,13 +62,21 @@ export async function analyzeProject(projectId?: string) {
 }
 
 // Tasks API
-export async function getTasks(projectId?: string, status?: string) {
+export async function getTasks(projectId?: string, status?: string): Promise<unknown[]> {
   const params = new URLSearchParams();
   if (projectId) params.set("project_id", projectId);
   if (status) params.set("status", status);
 
-  const response = await fetch(`${API_BASE}/tasks?${params}`);
-  return handleResponse(response);
+  try {
+    const response = await fetch(`${API_BASE}/tasks?${params}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+    return await response.json();
+  } catch (err) {
+    // Re-throw with more context, but let dashboard handle fallback
+    throw new Error(err instanceof Error ? err.message : "Failed to fetch tasks");
+  }
 }
 
 export async function getTask(taskId: string) {
