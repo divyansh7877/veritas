@@ -1,5 +1,10 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress, ProgressIndicator, ProgressValue } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+
 function Icon({ name, filled = false, className = "" }: { name: string; filled?: boolean; className?: string }) {
   return (
     <span
@@ -71,65 +76,69 @@ const tasks: Task[] = [
 ];
 
 function TaskCard({ task }: { task: Task }) {
-  const priorityColors = {
-    critical: { dot: "bg-error", label: "text-error" },
-    important: { dot: "bg-orange-500", label: "text-orange-600" },
-    consider: { dot: "bg-tertiary-container", label: "text-tertiary-container" },
+  const priorityStyles = {
+    critical: { dot: "bg-destructive", label: "text-destructive", variant: "destructive" as const },
+    important: { dot: "bg-orange-500", label: "text-orange-600", variant: "secondary" as const },
+    consider: { dot: "bg-primary", label: "text-primary", variant: "default" as const },
   };
 
-  const color = priorityColors[task.priority];
+  const style = priorityStyles[task.priority];
 
   if (task.resolved) {
     return (
-      <div className="bg-surface-container-low/50 p-6 rounded-xl border border-outline-variant/5 flex items-center justify-between grayscale-[0.5] opacity-80">
-        <div className="flex items-start gap-6">
-          <div className="flex flex-col items-center gap-1 min-w-[70px]">
-            <span className={`w-2 h-2 rounded-full ${color.dot} mb-1`} />
-            <span className={`text-[10px] font-bold uppercase tracking-tighter ${color.label} font-label`}>Consider</span>
-          </div>
-          <div className="flex flex-col gap-1 max-w-[540px]">
-            <h3 className="text-sm font-bold text-on-surface/60 font-headline line-through decoration-on-surface-variant/30">{task.title}</h3>
-            <div className="flex items-center gap-2 text-[12px] text-secondary font-medium font-body">
-              <Icon name="check_circle" filled className="text-sm" />
-              Resolved: {task.resolution}
+      <Card className="opacity-80 grayscale-[0.5]">
+        <CardContent className="p-6 flex items-center justify-between">
+          <div className="flex items-start gap-6">
+            <div className="flex flex-col items-center gap-1 min-w-[70px]">
+              <span className={`w-2 h-2 rounded-full ${style.dot} mb-1`} />
+              <span className={`text-[10px] font-bold uppercase tracking-tighter ${style.label}`}>Consider</span>
             </div>
-            <div className="mt-2">
-              <span className="px-2 py-0.5 bg-surface-container text-[10px] font-semibold rounded text-on-surface-variant/50 font-label">{task.tag}</span>
+            <div className="flex flex-col gap-1 max-w-[540px]">
+              <h3 className="text-sm font-bold line-through decoration-muted-foreground/30">{task.title}</h3>
+              <div className="flex items-center gap-2 text-[12px] text-secondary font-medium">
+                <Icon name="check_circle" filled className="text-sm" />
+                Resolved: {task.resolution}
+              </div>
+              <div className="mt-2">
+                <Badge variant="outline" className="text-[10px]">{task.tag}</Badge>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="text-secondary/60 flex items-center gap-1 pr-4">
-          <Icon name="check_circle" filled />
-          <span className="text-xs font-bold font-label">Resolved</span>
-        </div>
-      </div>
+          <div className="text-secondary flex items-center gap-1 pr-4">
+            <Icon name="check_circle" filled />
+            <span className="text-xs font-bold">Resolved</span>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="group bg-surface-container-lowest p-6 rounded-xl transition-all duration-200 hover:translate-x-1 shadow-[0px_12px_32px_rgba(25,28,30,0.02)] border border-outline-variant/10 flex items-center justify-between">
-      <div className="flex items-start gap-6">
-        <div className="flex flex-col items-center gap-1 min-w-[70px]">
-          <span className={`w-2 h-2 rounded-full ${color.dot} mb-1`} />
-          <span className={`text-[10px] font-bold uppercase tracking-tighter ${color.label} font-label`}>
-            {task.priority === "critical" ? "Critical" : "Important"}
-          </span>
-        </div>
-        <div className="flex flex-col gap-1 max-w-[540px]">
-          <h3 className="text-sm font-bold text-on-surface font-headline">{task.title}</h3>
-          <p className="text-[12px] text-on-surface-variant font-body leading-relaxed">{task.description}</p>
-          <div className="mt-2">
-            <span className="px-2 py-0.5 bg-surface-container text-[10px] font-semibold rounded text-on-surface-variant font-label">{task.tag}</span>
+    <Card className="group hover:translate-x-1 transition-all duration-200">
+      <CardContent className="p-6 flex items-center justify-between">
+        <div className="flex items-start gap-6">
+          <div className="flex flex-col items-center gap-1 min-w-[70px]">
+            <span className={`w-2 h-2 rounded-full ${style.dot} mb-1`} />
+            <span className={`text-[10px] font-bold uppercase tracking-tighter ${style.label}`}>
+              {task.priority === "critical" ? "Critical" : "Important"}
+            </span>
+          </div>
+          <div className="flex flex-col gap-1 max-w-[540px]">
+            <h3 className="text-sm font-bold font-headline">{task.title}</h3>
+            <p className="text-[12px] text-muted-foreground leading-relaxed">{task.description}</p>
+            <div className="mt-2">
+              <Badge variant="outline" className="text-[10px]">{task.tag}</Badge>
+            </div>
           </div>
         </div>
-      </div>
-      <div>
-        <button className="flex items-center gap-2 px-5 py-2 border border-primary text-primary text-xs font-bold rounded-full hover:bg-primary hover:text-white transition-all active:scale-95 group/btn">
-          Resolve
-          <Icon name="arrow_forward" className="text-sm group-hover/btn:translate-x-1 transition-transform" />
-        </button>
-      </div>
-    </div>
+        <div>
+          <Button variant="outline" size="sm" className="gap-2">
+            Resolve
+            <Icon name="arrow_forward" className="text-sm group-hover:translate-x-1 transition-transform" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -142,16 +151,16 @@ function Header() {
   return (
     <header className="mb-12">
       <div className="flex flex-col gap-1 mb-4">
-        <span className="text-xs font-semibold tracking-wider text-on-surface-variant/70 uppercase font-label">Project: HMRC Customs Declarations</span>
+        <span className="text-xs font-semibold tracking-wider text-muted-foreground/70 uppercase">Project: HMRC Customs Declarations</span>
         <h1 className="text-[22px] font-bold text-primary font-headline">Migration decisions</h1>
         <div className="flex items-center justify-between mt-1">
-          <p className="text-sm text-on-surface-variant font-body">{totalTasks} decisions identified · {resolvedTasks} resolved · {pendingTasks} pending</p>
-          <span className="text-xs font-bold text-secondary font-label">{progressPercent}% Complete</span>
+          <p className="text-sm text-muted-foreground">{totalTasks} decisions identified · {resolvedTasks} resolved · {pendingTasks} pending</p>
+          <span className="text-xs font-bold text-secondary">{progressPercent}% Complete</span>
         </div>
       </div>
-      <div className="w-full h-2 bg-surface-container rounded-full overflow-hidden">
-        <div className="h-full bg-secondary w-1/4 rounded-full" />
-      </div>
+      <Progress value={progressPercent} className="w-full h-2">
+        <ProgressIndicator style={{ width: `${progressPercent}%` }} />
+      </Progress>
     </header>
   );
 }
@@ -160,10 +169,10 @@ function Footer() {
   return (
     <footer className="mt-auto py-12 px-8 flex justify-between items-center max-w-[1440px] mx-auto opacity-50">
       <div className="flex gap-6">
-        <a className="text-xs font-medium text-on-surface hover:underline font-body" href="#">Documentation</a>
-        <a className="text-xs font-medium text-on-surface hover:underline font-body" href="#">Support</a>
+        <a className="text-xs font-medium hover:underline" href="#">Documentation</a>
+        <a className="text-xs font-medium hover:underline" href="#">Support</a>
       </div>
-      <div className="text-[10px] text-on-surface-variant font-label">
+      <div className="text-[10px] text-muted-foreground">
         © 2024 Migration Lens Intelligence Engine
       </div>
     </footer>
@@ -182,10 +191,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="mt-12 pt-8 flex justify-center">
-        <button className="text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors font-body flex items-center gap-2">
+        <Button variant="ghost" className="gap-2">
           Show more pending tasks
-          <Icon name="keyboard_arrow_down" className="text-sm" />
-        </button>
+          <Icon name="keyboard_arrow_down" />
+        </Button>
       </div>
 
       <Footer />
