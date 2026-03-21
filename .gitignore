@@ -18,3 +18,5 @@ build/
 node_modules/
 web/node_modules/
 .web
+.turbo/
+web/.next/

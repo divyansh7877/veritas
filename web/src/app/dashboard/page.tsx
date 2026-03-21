@@ -19,8 +19,9 @@ interface Task {
   status?: "Open" | "In Progress" | "Resolved";
 }
 
-// Map backend task to frontend Task type
-function mapBackendTask(task: { id: string; title: string; description: string; category: string; status: string; resolution?: string | null }): Task {
+type BackendTask = { id: string; title: string; description: string; category: string; status: string; resolution?: string | null };
+
+function mapBackendTask(task: BackendTask): Task {
   const priorityMap: Record<string, "critical" | "important" | "consider"> = {
     critical: "critical",
     important: "important",
@@ -281,7 +282,7 @@ export default function DashboardPage() {
       try {
         const data = await getTasks();
         if (Array.isArray(data) && data.length > 0) {
-          setTasks(data.map(mapBackendTask));
+          setTasks((data as BackendTask[]).map(mapBackendTask));
         } else {
           setTasks(mockTasks);
         }
