@@ -6,7 +6,7 @@ import { ArrowRight, CheckCircle2, ChevronDown, AlertTriangle, Circle, Plus, Set
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getTasks, BackendTask } from "@/lib/api";
+import { getTasks } from "@/lib/api";
 
 interface Task {
   id: string;
