@@ -1,0 +1,16 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "cd web && npm run build",
+  "outputDirectory": "web/.next",
+  "installCommand": "npm install",
+  "functions": {
+    "api/*.py": {
+      "runtime": "@vercel/python@4.5.0"
+    }
+  },
+  "rewrites": [
+    { "source": "/ingestion/:path*", "destination": "/api/index.py" },
+    { "source": "/tasks/:path*", "destination": "/api/index.py" },
+    { "source": "/health", "destination": "/api/index.py" }
+  ]
+}
