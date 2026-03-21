@@ -1,0 +1,22 @@
+[project]
+name = "veritas"
+version = "0.1.0"
+description = "AI-Powered Requirements Alignment System"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "supabase>=2.13.0",
+    "ai-sdk-python>=0.1.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "python-dotenv>=1.0.0",
+    "python-multipart>=0.0.20",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
