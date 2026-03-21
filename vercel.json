@@ -1,7 +1,4 @@
 {
-  "installCommand": "npm install",
-  "buildCommand": "cd web && npx next build --webpack",
-  "outputDirectory": "web/.next",
   "rewrites": [
     { "source": "/ingestion/:path*", "destination": "/api/index.py" },
     { "source": "/tasks/:path*", "destination": "/api/index.py" },
