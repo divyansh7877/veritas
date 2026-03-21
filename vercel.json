@@ -1,4 +1,5 @@
 {
+  "buildCommand": "echo 'API only'",
   "outputDirectory": "public",
   "rewrites": [
     { "source": "/ingestion/:path*", "destination": "/api/index.py" },
