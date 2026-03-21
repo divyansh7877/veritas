@@ -1,5 +1,5 @@
 {
-  "buildCommand": "echo 'API only'",
+  "buildCommand": "mkdir -p public && echo '{}' > public/index.json",
   "outputDirectory": "public",
   "rewrites": [
     { "source": "/ingestion/:path*", "destination": "/api/index.py" },
