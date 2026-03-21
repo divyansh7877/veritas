@@ -1,13 +1,29 @@
--- Tasks
+-- Sources (GitHub repos, documentation, suggestions)
+CREATE TABLE sources (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID,
+    source_type TEXT NOT NULL CHECK (source_type IN ('github_repo', 'documentation', 'suggestion')),
+    name TEXT NOT NULL,
+    content TEXT,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Tasks (generated from analysis of sources)
 CREATE TABLE tasks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
-    topic TEXT NOT NULL,
+    project_id UUID,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'ambiguity',
+    status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open', 'In Progress', 'Resolved')),
+    context JSONB DEFAULT '{}',
+    resolution TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Conversations
+-- Conversations (linked to tasks for resolution chat)
 CREATE TABLE conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,

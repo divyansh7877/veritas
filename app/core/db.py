@@ -14,10 +14,39 @@ def get_client() -> httpx.Client:
     return httpx.Client(base_url=BASE_URL, headers=HEADERS, timeout=30.0)
 
 
-# Tasks
-def list_tasks():
+# Sources
+def list_sources(project_id: str | None = None, source_type: str | None = None):
     with get_client() as client:
-        return client.get("/tasks").json()
+        url = "/sources?order=created_at"
+        if project_id:
+            url += f"&project_id=eq.{project_id}"
+        if source_type:
+            url += f"&source_type=eq.{source_type}"
+        return client.get(url).json()
+
+
+def create_source(project_id: str | None, source_type: str, name: str,
+                   content: str | None = None, metadata: dict | None = None):
+    payload: dict = {"source_type": source_type, "name": name}
+    if project_id:
+        payload["project_id"] = project_id
+    if content is not None:
+        payload["content"] = content
+    if metadata is not None:
+        payload["metadata"] = metadata
+    with get_client() as client:
+        return client.post("/sources", json=payload).json()
+
+
+# Tasks
+def list_tasks(project_id: str | None = None, status: str | None = None):
+    with get_client() as client:
+        url = "/tasks?order=created_at"
+        if project_id:
+            url += f"&project_id=eq.{project_id}"
+        if status:
+            url += f"&status=eq.{status}"
+        return client.get(url).json()
 
 
 def get_task(task_id: str):
@@ -25,14 +54,20 @@ def get_task(task_id: str):
         return client.get(f"/tasks?id=eq.{task_id}").json()
 
 
-def create_task(topic: str):
+def create_task(project_id: str | None = None, title: str = "", description: str = "",
+                category: str = "ambiguity", context: dict | None = None):
+    payload: dict = {"title": title, "description": description, "category": category}
+    if project_id:
+        payload["project_id"] = project_id
+    if context is not None:
+        payload["context"] = context
     with get_client() as client:
-        return client.post("/tasks", json={"topic": topic}).json()
+        return client.post("/tasks", json=payload).json()
 
 
-def update_task(task_id: str, status: str):
+def update_task(task_id: str, updates: dict):
     with get_client() as client:
-        return client.patch(f"/tasks?id=eq.{task_id}", json={"status": status}).json()
+        return client.patch(f"/tasks?id=eq.{task_id}", json=updates).json()
 
 
 # Conversations
