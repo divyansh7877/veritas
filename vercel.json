@@ -1,18 +1,10 @@
 {
-  "builds": [
-    {
-      "src": "web/package.json",
-      "use": "@vercel/next"
-    },
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    { "src": "/ingestion/(.*)", "dest": "/api/index.py" },
-    { "src": "/tasks/(.*)", "dest": "/api/index.py" },
-    { "src": "/health", "dest": "/api/index.py" },
-    { "src": "/(.*)", "dest": "/web/$1" }
+  "installCommand": "npm install",
+  "buildCommand": "cd web && next build --webpack",
+  "outputDirectory": "web/.next",
+  "rewrites": [
+    { "source": "/ingestion/:path*", "destination": "/api/index.py" },
+    { "source": "/tasks/:path*", "destination": "/api/index.py" },
+    { "source": "/health", "destination": "/api/index.py" }
   ]
 }
