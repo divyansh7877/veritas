@@ -110,3 +110,18 @@ export async function resolveTask(taskId: string, resolution: string) {
   });
   return handleResponse(response);
 }
+
+export interface Conversation {
+  id: string;
+  question: string;
+  answer: string;
+  status: string;
+}
+
+export async function getTaskConversations(taskId: string): Promise<Conversation[]> {
+  const response = await fetch(`${API_BASE}/tasks/${taskId}/conversations`);
+  if (!response.ok) {
+    throw new Error(`HTTP error ${response.status}`);
+  }
+  return await response.json();
+}

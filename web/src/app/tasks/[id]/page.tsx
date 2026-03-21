@@ -1,210 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { ArrowRight, ChevronLeft, CheckCircle2, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getTask, sendTaskMessage, getTaskConversations, type BackendTask, type Conversation } from "@/lib/api";
 
-// Mock task data - in production this would come from API
-const mockTasks: Record<string, {
-  id: string;
-  priority: "critical" | "important" | "consider";
-  title: string;
-  description: string;
-  tag: string;
-  resolved?: boolean;
-  resolution?: string;
-  status?: "Open" | "In Progress" | "Resolved";
-  questions: Question[];
-}> = {
-  "1": {
-    id: "1",
-    priority: "critical",
-    title: "Choose database strategy",
-    description: "The current system uses Oracle 11g. Decide between PostgreSQL migration or cloud-native alternative",
-    tag: "Architecture",
-    status: "Open",
-    questions: [
-      {
-        id: "q1",
-        question: "What are the current Oracle 11g features being used?",
-        answer: "We are using Advanced Queuing, XML DB, and Oracle Spatial for our mapping features.",
-      },
-      {
-        id: "q2",
-        question: "What's the expected data volume growth over the next 5 years?",
-        answer: "",
-      },
-      {
-        id: "q3",
-        question: "Do you have budget for commercial database licenses?",
-        answer: "",
-      },
-    ],
-  },
-  "2": {
-    id: "2",
-    priority: "critical",
-    title: "Define API compatibility layer",
-    description: "47 external systems connect to the current SOAP API. Determine backward compatibility approach",
-    tag: "Integration",
-    status: "Open",
-    questions: [
-      {
-        id: "q1",
-        question: "How many unique API operations are being used?",
-        answer: "Approximately 120 distinct operations across 15 service endpoints.",
-      },
-      {
-        id: "q2",
-        question: "What's the deprecation timeline for the legacy API?",
-        answer: "",
-      },
-    ],
-  },
-  "3": {
-    id: "3",
-    priority: "important",
-    title: "Authentication modernization",
-    description: "Legacy system uses custom session tokens. Decide on OAuth2, SAML, or passkey approach",
-    tag: "Security",
-    status: "Open",
-    questions: [
-      {
-        id: "q1",
-        question: "How many active users need to be migrated?",
-        answer: "",
-      },
-    ],
-  },
-  "4": {
-    id: "4",
-    priority: "important",
-    title: "Data migration strategy",
-    description: "22 years of transaction records. Define what migrates, what archives, what gets purged",
-    tag: "Data",
-    status: "Open",
-    questions: [
-      {
-        id: "q1",
-        question: "What is the total size of historical data?",
-        answer: "",
-      },
-    ],
-  },
-  "5": {
-    id: "5",
-    priority: "consider",
-    title: "User interface approach",
-    description: "",
-    tag: "UX",
-    resolved: true,
-    resolution: "Adopted React SPA for modern frontend flexibility.",
-    status: "Resolved",
-    questions: [
-      {
-        id: "q1",
-        question: "What frontend framework was chosen?",
-        answer: "React with Next.js 16 for SSR and better SEO.",
-      },
-    ],
-  },
-  "6": {
-    id: "6",
-    priority: "consider",
-    title: "Monitoring and observability",
-    description: "",
-    tag: "Architecture",
-    resolved: true,
-    resolution: "Implementation of Prometheus/Grafana stack approved.",
-    status: "Resolved",
-    questions: [
-      {
-        id: "q1",
-        question: "What monitoring stack was selected?",
-        answer: "Prometheus for metrics, Grafana for dashboards, and Loki for logs.",
-      },
-    ],
-  },
-};
-
-interface Question {
-  id: string;
-  question: string;
-  answer: string;
-}
-
-function QuestionCard({ question, onSubmit }: { question: Question; onSubmit: (answer: string) => void }) {
-  const [answer, setAnswer] = useState(question.answer);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(!!question.answer);
-
-  async function handleSubmit() {
-    if (!answer.trim()) return;
-    setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    onSubmit(answer);
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-  }
+function ConversationCard({ conversation }: { conversation: Conversation }) {
+  const hasAnswer = conversation.answer && conversation.answer.trim() !== "";
 
   return (
-    <Card className={isSubmitted && question.answer ? "opacity-70" : ""}>
+    <Card className={hasAnswer ? "opacity-80" : ""}>
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-            isSubmitted && question.answer
+            hasAnswer
               ? "bg-secondary/10"
               : "bg-muted"
           }`}>
-            {isSubmitted && question.answer ? (
+            {hasAnswer ? (
               <CheckCircle2 className="h-4 w-4 text-secondary" />
             ) : (
-              <span className="text-xs font-medium text-muted-foreground">
-                {question.id.replace("q", "")}
-              </span>
+              <span className="text-xs font-medium text-muted-foreground">?</span>
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground mb-3">
-              {question.question}
-            </p>
-            {isSubmitted && answer ? (
-              <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
-                {answer}
+          <div className="flex-1 min-w-0 space-y-4">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">You</p>
+              <p className="text-sm font-medium text-foreground">
+                {conversation.question || "No question yet"}
               </p>
-            ) : (
-              <div className="space-y-3">
-                <textarea
-                  className="w-full min-h-[80px] rounded-lg border border-border/60 bg-card px-3 py-2 text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 resize-none"
-                  placeholder="Type your answer..."
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    onClick={handleSubmit}
-                    disabled={!answer.trim() || isSubmitting}
-                    className="gap-2"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-3.5 w-3.5" />
-                        Submit Answer
-                      </>
-                    )}
-                  </Button>
-                </div>
+            </div>
+            {hasAnswer && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Agent</p>
+                <p className="text-sm text-foreground bg-muted/50 rounded-lg p-3">
+                  {conversation.answer}
+                </p>
               </div>
             )}
           </div>
@@ -214,8 +49,8 @@ function QuestionCard({ question, onSubmit }: { question: Question; onSubmit: (a
   );
 }
 
-function Header({ task }: { task: typeof mockTasks[string] }) {
-  const isResolved = task.resolved;
+function Header({ task }: { task: BackendTask }) {
+  const isResolved = task.status === "Resolved";
 
   return (
     <header className="mb-8">
@@ -228,7 +63,7 @@ function Header({ task }: { task: typeof mockTasks[string] }) {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <Badge variant="outline" className="text-xs">
-              {task.tag}
+              {task.category}
             </Badge>
             <Badge
               variant="outline"
@@ -238,7 +73,7 @@ function Header({ task }: { task: typeof mockTasks[string] }) {
                   : "bg-amber-50 text-amber-700 border-amber-200"
               }`}
             >
-              {isResolved ? "Resolved" : "Open"}
+              {task.status}
             </Badge>
           </div>
           <h1 className={`text-2xl font-headline font-bold mb-2 ${isResolved ? "text-muted-foreground line-through" : "text-foreground"}`}>
@@ -272,18 +107,81 @@ function Header({ task }: { task: typeof mockTasks[string] }) {
 
 export default function TaskDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const taskId = params.id as string;
-  const task = mockTasks[taskId];
 
-  const [questions, setQuestions] = useState(task?.questions || []);
+  const [task, setTask] = useState<BackendTask | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!task) {
+  const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [taskData, convos] = await Promise.all([
+          getTask(taskId),
+          getTaskConversations(taskId),
+        ]);
+        setTask(taskData);
+        setConversations(convos);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load task");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [taskId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conversations]);
+
+  async function handleSendMessage() {
+    if (!message.trim() || isSending) return;
+
+    setIsSending(true);
+    try {
+      const response = await sendTaskMessage(taskId, message);
+      // Add user message and agent response to conversations
+      setConversations((prev) => [
+        ...prev,
+        {
+          id: `temp-${Date.now()}`,
+          question: message,
+          answer: response.agent_reply || "",
+          status: "resolved",
+        },
+      ]);
+      setMessage("");
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-background to-muted/10">
+        <div className="max-w-3xl mx-auto px-6 py-16 flex flex-col items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground mt-4">Loading task...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (error || !task) {
     return (
       <main className="min-h-screen bg-gradient-to-b from-background to-muted/10">
         <div className="max-w-3xl mx-auto px-6 py-16 flex flex-col items-center justify-center min-h-[60vh]">
           <h1 className="text-xl font-headline font-bold text-foreground mb-2">Task not found</h1>
-          <p className="text-sm text-muted-foreground mb-6">The task you're looking for doesn't exist.</p>
+          <p className="text-sm text-muted-foreground mb-6">{error || "The task you're looking for doesn't exist."}</p>
           <Link href="/dashboard">
             <Button variant="outline" className="gap-2">
               <ChevronLeft className="h-4 w-4" />
@@ -295,47 +193,82 @@ export default function TaskDetailPage() {
     );
   }
 
-  const answeredCount = questions.filter((q) => q.answer).length;
-  const totalCount = questions.length;
+  const answeredCount = conversations.filter((c) => c.answer && c.answer.trim() !== "").length;
+  const totalCount = conversations.length;
   const progressPercent = totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
-
-  function handleAnswerSubmit(questionId: string, answer: string) {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === questionId ? { ...q, answer } : q))
-    );
-  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/10">
       <div className="max-w-3xl mx-auto px-6 py-10">
         <Header task={task} />
 
-        {!task.resolved && (
+        {task.status !== "Resolved" && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Questions to resolve</span>
+              <span className="text-sm font-medium">Conversation with agent</span>
               <span className="text-sm text-muted-foreground">
-                {answeredCount} of {totalCount} answered
+                {answeredCount} of {totalCount} {totalCount === 1 ? "exchange" : "exchanges"} answered
               </span>
             </div>
-            <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full bg-secondary transition-all duration-500 ease-out"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
+            {totalCount > 0 && (
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-secondary transition-all duration-500 ease-out"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            )}
           </div>
         )}
 
-        <div className="space-y-4">
-          {questions.map((question) => (
-            <QuestionCard
-              key={question.id}
-              question={question}
-              onSubmit={(answer) => handleAnswerSubmit(question.id, answer)}
-            />
+        <div className="space-y-4 mb-6">
+          {conversations.map((conversation) => (
+            <ConversationCard key={conversation.id} conversation={conversation} />
           ))}
         </div>
+
+        {task.status !== "Resolved" && (
+          <div className="sticky bottom-6">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex gap-3">
+                  <textarea
+                    className="flex-1 min-h-[60px] rounded-lg border border-border/60 bg-card px-3 py-2 text-sm placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 resize-none"
+                    placeholder="Ask the agent a question or share information..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSendMessage}
+                    disabled={!message.trim() || isSending}
+                    className="gap-2 self-end"
+                  >
+                    {isSending ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-3.5 w-3.5" />
+                        Send
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
       </div>
     </main>
   );

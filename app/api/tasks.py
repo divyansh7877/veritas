@@ -7,6 +7,25 @@ from app.agents.task_interviewer import task_interview_reply
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
+@router.get("/{task_id}/conversations")
+def get_task_conversations(task_id: str):
+    """Get all conversations for a task, formatted as Q&A pairs."""
+    task = task_service.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    conversations = conversation_service.get_conversations(task_id)
+    result = []
+    for c in conversations:
+        result.append({
+            "id": c.get("id"),
+            "question": c.get("question", {}).get("content", ""),
+            "answer": c.get("answer", {}).get("content", ""),
+            "status": c.get("status", ""),
+        })
+    return result
+
+
 class TaskMessageCreate(BaseModel):
     content: str
 

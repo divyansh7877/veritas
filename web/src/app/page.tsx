@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ingestGitHubRepo, ingestDocumentation, ingestSuggestions, analyzeProject } from "@/lib/api";
 
 function NavBar() {
   return (
@@ -171,9 +172,29 @@ export default function HomePage() {
 
   async function handleAnalyze() {
     setLoading(true);
-    // Simulate analysis for demo - always go to dashboard
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    router.push("/dashboard");
+    try {
+      // Ingest from GitHub if URL provided
+      if (githubUrl) {
+        await ingestGitHubRepo(githubUrl);
+      }
+      // Ingest uploaded files if any
+      if (files.length > 0) {
+        await ingestDocumentation(files);
+      }
+      // If neither, use default suggestions prompt
+      if (!githubUrl && files.length === 0) {
+        await ingestSuggestions([
+          "Analyze this migration project and identify critical decisions needed for a successful migration from legacy Oracle 11g to a modern cloud-native stack"
+        ]);
+      }
+      // Trigger analysis to generate tasks
+      await analyzeProject();
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Analysis failed:", err);
+      // Still redirect to dashboard even on error - it will show mock data
+      router.push("/dashboard");
+    }
   }
 
   return (
