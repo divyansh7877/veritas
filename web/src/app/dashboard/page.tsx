@@ -1,20 +1,10 @@
 "use client";
 
+import { ArrowRight, CheckCircle, ChevronDown, Circle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress, ProgressIndicator, ProgressValue } from "@/components/ui/progress";
+import { Progress, ProgressIndicator } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-
-function Icon({ name, filled = false, className = "" }: { name: string; filled?: boolean; className?: string }) {
-  return (
-    <span
-      className={`material-symbols-outlined ${className}`}
-      style={filled ? { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" } : undefined}
-    >
-      {name}
-    </span>
-  );
-}
 
 interface Task {
   id: string;
@@ -77,12 +67,13 @@ const tasks: Task[] = [
 
 function TaskCard({ task }: { task: Task }) {
   const priorityStyles = {
-    critical: { dot: "bg-destructive", label: "text-destructive", variant: "destructive" as const },
-    important: { dot: "bg-orange-500", label: "text-orange-600", variant: "secondary" as const },
-    consider: { dot: "bg-primary", label: "text-primary", variant: "default" as const },
+    critical: { icon: AlertCircle, iconClass: "text-destructive", label: "text-destructive" },
+    important: { icon: Circle, iconClass: "text-orange-500", label: "text-orange-600" },
+    consider: { icon: Circle, iconClass: "text-primary", label: "text-primary" },
   };
 
   const style = priorityStyles[task.priority];
+  const IconComponent = style.icon;
 
   if (task.resolved) {
     return (
@@ -90,13 +81,13 @@ function TaskCard({ task }: { task: Task }) {
         <CardContent className="p-6 flex items-center justify-between">
           <div className="flex items-start gap-6">
             <div className="flex flex-col items-center gap-1 min-w-[70px]">
-              <span className={`w-2 h-2 rounded-full ${style.dot} mb-1`} />
+              <IconComponent className={`h-2 w-2 mb-1 ${style.iconClass}`} />
               <span className={`text-[10px] font-bold uppercase tracking-tighter ${style.label}`}>Consider</span>
             </div>
             <div className="flex flex-col gap-1 max-w-[540px]">
               <h3 className="text-sm font-bold line-through decoration-muted-foreground/30">{task.title}</h3>
               <div className="flex items-center gap-2 text-[12px] text-secondary font-medium">
-                <Icon name="check_circle" filled className="text-sm" />
+                <CheckCircle className="h-4 w-4 shrink-0" />
                 Resolved: {task.resolution}
               </div>
               <div className="mt-2">
@@ -105,7 +96,7 @@ function TaskCard({ task }: { task: Task }) {
             </div>
           </div>
           <div className="text-secondary flex items-center gap-1 pr-4">
-            <Icon name="check_circle" filled />
+            <CheckCircle className="h-4 w-4" />
             <span className="text-xs font-bold">Resolved</span>
           </div>
         </CardContent>
@@ -118,7 +109,7 @@ function TaskCard({ task }: { task: Task }) {
       <CardContent className="p-6 flex items-center justify-between">
         <div className="flex items-start gap-6">
           <div className="flex flex-col items-center gap-1 min-w-[70px]">
-            <span className={`w-2 h-2 rounded-full ${style.dot} mb-1`} />
+            <IconComponent className={`h-2 w-2 mb-1 ${style.iconClass}`} />
             <span className={`text-[10px] font-bold uppercase tracking-tighter ${style.label}`}>
               {task.priority === "critical" ? "Critical" : "Important"}
             </span>
@@ -134,7 +125,7 @@ function TaskCard({ task }: { task: Task }) {
         <div>
           <Button variant="outline" size="sm" className="gap-2">
             Resolve
-            <Icon name="arrow_forward" className="text-sm group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
       </CardContent>
@@ -193,7 +184,7 @@ export default function DashboardPage() {
       <div className="mt-12 pt-8 flex justify-center">
         <Button variant="ghost" className="gap-2">
           Show more pending tasks
-          <Icon name="keyboard_arrow_down" />
+          <ChevronDown className="h-4 w-4" />
         </Button>
       </div>
 

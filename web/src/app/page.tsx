@@ -2,33 +2,23 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Search, HelpCircle, GitBranch, Upload, FileText, Sparkles, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-
-function Icon({ name, filled = false }: { name: string; filled?: boolean }) {
-  return (
-    <span
-      className="material-symbols-outlined text-base"
-      style={filled ? { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" } : undefined}
-    >
-      {name}
-    </span>
-  );
-}
 
 function NavBar() {
   return (
     <nav className="w-full px-8 py-5 flex items-center justify-between border-b border-border/20 bg-white">
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 bg-primary flex items-center justify-center rounded-lg shrink-0">
-          <Icon name="lens" />
+          <Search className="h-4 w-4 text-primary-foreground" />
         </div>
         <span className="font-headline font-bold text-sm tracking-tight text-primary">Migration Lens</span>
       </div>
       <Button variant="ghost" size="icon" aria-label="Help">
-        <Icon name="help_outline" />
+        <HelpCircle className="h-5 w-5" />
       </Button>
     </nav>
   );
@@ -39,6 +29,7 @@ function SearchInput() {
     <div className="relative group">
       <div className="absolute -inset-3 bg-primary/5 rounded-3xl blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
       <div className="relative flex items-center bg-white border border-border/60 rounded-full px-6 py-3.5 search-container-shadow focus-within:border-ring transition-all">
+        <Search className="h-5 w-5 text-muted-foreground/50 mr-3 shrink-0" />
         <input
           className="flex-grow bg-transparent border-none text-base focus:ring-0 placeholder:text-muted-foreground/50 text-foreground"
           placeholder="Describe the system you're migrating…"
@@ -62,7 +53,7 @@ function ImportSection() {
       <CardContent className="p-0">
         <div className="px-5 py-4 space-y-2 border-b border-border/20">
           <Label htmlFor="import-repo-url" className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-            <Icon name="commit" />
+            <GitBranch className="h-3.5 w-3.5" />
             GitHub repository
           </Label>
           <Input
@@ -75,7 +66,7 @@ function ImportSection() {
         </div>
         <div className="px-5 py-4 space-y-2">
           <Label htmlFor="import-doc-file" className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-            <Icon name="upload_file" />
+            <Upload className="h-3.5 w-3.5" />
             Upload document
             <span className="normal-case font-normal tracking-normal text-muted-foreground/60">— PDF or Word</span>
           </Label>
@@ -83,7 +74,7 @@ function ImportSection() {
             htmlFor="import-doc-file"
             className="flex items-center gap-3 w-full rounded-xl border-2 border-dashed border-border/40 bg-muted/50 px-4 py-4 cursor-pointer hover:border-border hover:bg-muted transition-all group/drop"
           >
-            <Icon name="description" />
+            <FileText className="h-6 w-6 text-muted-foreground/60 group-hover/drop:text-muted-foreground transition-colors shrink-0" />
             <span className="text-sm text-muted-foreground/60 group-hover/drop:text-muted-foreground transition-colors">
               {fileName}
             </span>
@@ -107,7 +98,7 @@ function SubmitButton() {
       <Button asChild size="lg" className="w-full font-headline gap-2.5">
         <Link href="/dashboard">
           Analyze & Generate Tasks
-          <Icon name="auto_awesome" filled />
+          <Sparkles className="h-4 w-4" />
         </Link>
       </Button>
       <p className="text-[11px] text-muted-foreground/50 text-center max-w-[380px] leading-relaxed">
