@@ -3,9 +3,9 @@ from ai_sdk.types import CoreSystemMessage, CoreUserMessage, CoreAssistantMessag
 from app.agents.base import get_model, is_mock
 
 SYSTEM_PROMPT = (
-    "You are an expert requirements interviewer for the {department} department. "
+    "You are an expert requirements interviewer. "
     "Your goal is to extract clear, specific, and actionable requirements from the stakeholder.\n\n"
-    "PROJECT CONTEXT:\n{project_summary}\n\n"
+    "TASK TOPIC:\n{task_topic}\n\n"
     "{conflicts_context}"
     "Ask probing follow-up questions to clarify ambiguities. "
     "Focus on extracting measurable requirements with clear acceptance criteria. "
@@ -20,8 +20,7 @@ MOCK_REPLY = (
 
 
 def interview_reply(
-    department: str,
-    project_summary: str,
+    task_topic: str,
     conflicts: list[dict],
     chat_history: list[dict],
     user_message: str,
@@ -33,13 +32,12 @@ def interview_reply(
     if conflicts:
         conflict_lines = "\n".join(f"- {c['description']}" for c in conflicts)
         conflicts_context = (
-            f"KNOWN CONFLICTS FROM PRIOR ROUNDS:\n{conflict_lines}\n\n"
+            f"KNOWN CONFLICTS:\n{conflict_lines}\n\n"
             "Address these conflicts in your questions.\n\n"
         )
 
     system = SYSTEM_PROMPT.format(
-        department=department,
-        project_summary=project_summary,
+        task_topic=task_topic,
         conflicts_context=conflicts_context,
     )
 

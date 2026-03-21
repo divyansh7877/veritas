@@ -11,12 +11,12 @@ def _extract_json(text: str) -> str:
     return text.strip()
 
 REVIEWER_PROMPT = (
-    "You are a cross-department requirements reviewer. "
-    "Analyze the following requirements from all departments and identify conflicts "
+    "You are a requirements reviewer. "
+    "Analyze the following requirements and identify conflicts "
     "or contradictions between them.\n\n"
     "REQUIREMENTS:\n{requirements_json}\n\n"
     "Return a JSON array of conflicts. Each conflict must have:\n"
-    '- "requirement_ids": array of requirement IDs that conflict\n'
+    '- "requirement_titles": array of requirement titles that conflict\n'
     '- "description": explanation of the conflict\n\n'
     "If no conflicts exist, return an empty array [].\n"
     "Return ONLY valid JSON, no other text."
@@ -24,8 +24,8 @@ REVIEWER_PROMPT = (
 
 MOCK_CONFLICTS = [
     {
-        "requirement_ids": ["mock-req-1", "mock-req-2"],
-        "description": "The emissions cap of 500 tons conflicts with the engineering load requirements which may necessitate heavier materials with higher carbon footprint.",
+        "requirement_titles": ["Emissions Cap", "Load Bearing Capacity"],
+        "description": "The emissions cap may conflict with load requirements regarding material choices.",
     },
 ]
 

@@ -1,88 +1,74 @@
-from fastapi import HTTPException
-
-from app.services import (
-    conversation_service,
-    message_service,
-    requirement_service,
-    conflict_service,
-    project_service,
-)
+from app.services import conversation_service, requirement_service, conflict_service, spec_service
 from app.agents.analyst import extract_requirements
 from app.agents.reviewer import detect_conflicts
-from app.schemas.stakeholder import Department
-
-ALL_DEPARTMENTS = [d.value for d in Department]
+from app.agents.writer import generate_spec
 
 
-def run_merge_round(project_id: str) -> dict:
-    project = project_service.get_project(project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+def run_single_pass(task_id: str) -> dict:
+    """Run a single-pass analysis on a task.
 
-    current_round = project["current_round"]
-    if current_round < 1:
-        raise HTTPException(status_code=400, detail="No rounds have been started yet")
+    1. Extract requirements from conversation transcripts
+    2. Detect conflicts between requirements
+    3. Generate a specification document
+    """
+    conversations = conversation_service.get_conversations(task_id)
+    if not conversations:
+        return {
+            "action": "no_conversations",
+            "requirements_extracted": 0,
+            "conflicts_found": 0,
+        }
 
-    convos = conversation_service.get_conversations(project_id, round_number=current_round)
-    dept_convos = {c["department"]: c for c in convos}
+    # Build transcript from conversations
+    transcript_parts = []
+    for conv in conversations:
+        question = conv.get("question", {})
+        answer = conv.get("answer", {})
+        if isinstance(question, dict):
+            transcript_parts.append(f"Q: {question.get('content', str(question))}")
+        if isinstance(answer, dict):
+            transcript_parts.append(f"A: {answer.get('content', str(answer))}")
 
-    for dept in ALL_DEPARTMENTS:
-        if dept not in dept_convos:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Missing conversation for {dept} in round {current_round}",
-            )
-        if dept_convos[dept]["status"] != "Completed":
-            raise HTTPException(
-                status_code=400,
-                detail=f"Conversation for {dept} in round {current_round} is not completed",
-            )
+    transcript = "\n".join(transcript_parts)
 
-    all_new_requirements = []
-    for dept in ALL_DEPARTMENTS:
-        conv = dept_convos[dept]
-        msgs = message_service.get_messages(conv["id"])
-        transcript = "\n".join(
-            f"[{m['sender_type']}]: {m['content']}" for m in msgs
+    # Extract requirements
+    requirements = extract_requirements(transcript)
+
+    # Save requirements
+    saved_requirements = []
+    for req in requirements:
+        result = requirement_service.create_requirement(
+            task_id=task_id,
+            title=req["title"],
+            description=req["description"],
         )
-        reqs = extract_requirements(dept, transcript)
-        all_new_requirements.extend(reqs)
+        saved_requirements.append(result)
 
-    if all_new_requirements:
-        requirement_service.upsert_requirements(project_id, all_new_requirements)
+    # Detect conflicts
+    conflicts = detect_conflicts(requirements)
 
-    all_requirements = requirement_service.get_requirements(project_id)
-    new_conflicts = detect_conflicts(all_requirements)
+    # Save conflicts
+    saved_conflicts = []
+    for conflict in conflicts:
+        # Map requirement titles to IDs (we use first match)
+        requirement_ids = []
+        for saved in saved_requirements:
+            if saved[0].get("title") in conflict.get("requirement_titles", []):
+                requirement_ids.append(saved[0]["id"])
+        result = conflict_service.create_conflicts(task_id, [{
+            "requirement_ids": requirement_ids,
+            "description": conflict["description"],
+        }])
+        saved_conflicts.append(result)
 
-    if new_conflicts:
-        conflict_service.create_conflicts(project_id, new_conflicts)
-
-    open_conflicts = conflict_service.get_open_conflicts(project_id)
-
-    if open_conflicts and current_round < 3:
-        next_round = current_round + 1
-        project_service.update_project(project_id, {"current_round": next_round})
-        for dept in ALL_DEPARTMENTS:
-            conversation_service.create_conversation(project_id, dept, next_round)
-        return {
-            "action": "next_round",
-            "round": next_round,
-            "conflicts_found": len(open_conflicts),
-            "requirements_extracted": len(all_new_requirements),
-        }
-
-    if open_conflicts and current_round >= 3:
-        conflict_service.block_open_conflicts(project_id)
-        return {
-            "action": "blocked",
-            "round": current_round,
-            "conflicts_blocked": len(open_conflicts),
-            "requirements_extracted": len(all_new_requirements),
-        }
+    # Generate spec
+    spec_content = generate_spec(requirements, conflicts)
+    spec = spec_service.create_spec_version(task_id, spec_content)
 
     return {
-        "action": "resolved",
-        "round": current_round,
-        "conflicts_found": 0,
-        "requirements_extracted": len(all_new_requirements),
+        "action": "completed",
+        "requirements_extracted": len(requirements),
+        "conflicts_found": len(conflicts),
+        "spec_version_id": spec[0]["id"] if spec else None,
+        "spec_content": spec_content,
     }
