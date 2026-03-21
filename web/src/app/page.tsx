@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, HelpCircle, Github, Upload, FileText, Sparkles, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, HelpCircle, Github, Upload, FileText, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ingestGitHubRepo, ingestDocumentation, analyzeProject } from "@/lib/api";
 
 function NavBar() {
   return (
@@ -61,12 +63,21 @@ function SearchSection() {
   );
 }
 
-function ImportSection() {
-  const [fileName, setFileName] = useState<string | null>(null);
+interface ImportSectionProps {
+  githubUrl: string;
+  files: File[];
+  onGithubUrlChange: (url: string) => void;
+  onFilesChange: (files: File[]) => void;
+}
+
+function ImportSection({ githubUrl, files, onGithubUrlChange, onFilesChange }: ImportSectionProps) {
+  const fileName = files.length > 0 ? files[0].name : null;
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    setFileName(file ? file.name : null);
+    const fileList = e.target.files;
+    if (fileList) {
+      onFilesChange(Array.from(fileList));
+    }
   }
 
   return (
@@ -88,6 +99,8 @@ function ImportSection() {
             autoComplete="url"
             placeholder="https://github.com/org/repository"
             className="h-10"
+            value={githubUrl}
+            onChange={(e) => onGithubUrlChange(e.target.value)}
           />
         </div>
         <div className="relative">
@@ -138,14 +151,32 @@ function ImportSection() {
   );
 }
 
-function SubmitButton() {
+interface SubmitButtonProps {
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}
+
+function SubmitButton({ loading, disabled, onClick }: SubmitButtonProps) {
   return (
     <div className="flex flex-col items-center gap-4 pt-2">
-      <Button asChild size="lg" className="w-full md:w-auto md:min-w-[280px] h-12 text-base shadow-md hover:shadow-lg hover:scale-[1.02] transition-all">
-        <Link href="/dashboard" className="gap-3">
-          Analyze & Generate Tasks
-          <ArrowRight className="h-5 w-5" />
-        </Link>
+      <Button
+        size="lg"
+        className="w-full md:w-auto md:min-w-[280px] h-12 text-base shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
+        onClick={onClick}
+        disabled={disabled || loading}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Analyzing...
+          </>
+        ) : (
+          <>
+            Analyze & Generate Tasks
+            <ArrowRight className="h-5 w-5" />
+          </>
+        )}
       </Button>
       <p className="text-xs text-muted-foreground/70 text-center max-w-md">
         Takes approximately 2-5 minutes depending on system complexity
@@ -180,6 +211,44 @@ function Footer() {
 }
 
 export default function HomePage() {
+  const router = useRouter();
+  const [githubUrl, setGithubUrl] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleAnalyze() {
+    if (!githubUrl && files.length === 0) {
+      router.push("/dashboard");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Ingest GitHub repo if provided
+      if (githubUrl) {
+        await ingestGitHubRepo(githubUrl);
+      }
+
+      // Ingest documentation files if provided
+      if (files.length > 0) {
+        await ingestDocumentation(files);
+      }
+
+      // Trigger analysis
+      await analyzeProject();
+
+      // Navigate to dashboard
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Analysis failed:", err);
+      setError("Analysis failed. Please try again or use demo data.");
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <NavBar />
@@ -187,8 +256,22 @@ export default function HomePage() {
         <HeroSection />
         <div className="w-full max-w-xl">
           <SearchSection />
-          <ImportSection />
-          <SubmitButton />
+          <ImportSection
+            githubUrl={githubUrl}
+            files={files}
+            onGithubUrlChange={setGithubUrl}
+            onFilesChange={setFiles}
+          />
+          {error && (
+            <div className="mt-4 px-4 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive">
+              {error}
+            </div>
+          )}
+          <SubmitButton
+            loading={loading}
+            disabled={!githubUrl && files.length === 0}
+            onClick={handleAnalyze}
+          />
         </div>
       </main>
       <Footer />

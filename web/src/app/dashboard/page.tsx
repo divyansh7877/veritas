@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ChevronDown, AlertTriangle, Circle, Plus, Settings, ChevronLeft } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, AlertTriangle, Circle, Plus, Settings, ChevronLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getTasks } from "@/lib/api";
 
 interface Task {
   id: string;
@@ -15,9 +16,29 @@ interface Task {
   tag: string;
   resolved?: boolean;
   resolution?: string;
+  status?: "Open" | "In Progress" | "Resolved";
 }
 
-const tasks: Task[] = [
+// Map backend task to frontend Task type
+function mapBackendTask(task: { id: string; title: string; description: string; category: string; status: string; resolution?: string | null }): Task {
+  const priorityMap: Record<string, "critical" | "important" | "consider"> = {
+    critical: "critical",
+    important: "important",
+    ambiguity: "consider",
+  };
+  return {
+    id: task.id,
+    priority: priorityMap[task.category] || "consider",
+    title: task.title,
+    description: task.description,
+    tag: task.category === "ambiguity" ? "Ambiguity" : task.category.charAt(0).toUpperCase() + task.category.slice(1),
+    resolved: task.status === "Resolved",
+    resolution: task.resolution || undefined,
+  };
+}
+
+// Fallback mock tasks
+const mockTasks: Task[] = [
   {
     id: "1",
     priority: "critical",
@@ -160,7 +181,7 @@ function TaskCard({ task, index }: { task: Task; index: number }) {
   );
 }
 
-function Header() {
+function Header({ tasks }: { tasks: Task[] }) {
   const totalTasks = tasks.length;
   const resolvedTasks = tasks.filter((t) => t.resolved).length;
   const pendingTasks = totalTasks - resolvedTasks;
@@ -250,14 +271,56 @@ function Footer() {
 }
 
 export default function DashboardPage() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    async function fetchTasks() {
+      try {
+        const data = await getTasks();
+        if (Array.isArray(data) && data.length > 0) {
+          setTasks(data.map(mapBackendTask));
+        } else {
+          setTasks(mockTasks);
+        }
+      } catch (err) {
+        console.error("Failed to fetch tasks:", err);
+        setTasks(mockTasks);
+        setError("Using demo data - API unavailable");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTasks();
+  }, []);
+
   const visibleTasks = showAll ? tasks : tasks.slice(0, 4);
   const hasMore = tasks.length > 4;
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-background to-muted/10">
+        <div className="max-w-4xl mx-auto px-6 py-10 flex items-center justify-center min-h-[60vh]">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading tasks...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/10">
       <div className="max-w-4xl mx-auto px-6 py-10">
-        <Header />
+        {error && (
+          <div className="mb-6 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700">
+            {error}
+          </div>
+        )}
+        <Header tasks={tasks} />
 
         <div className="space-y-3">
           {visibleTasks.map((task, index) => (
