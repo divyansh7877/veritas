@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, ChevronDown, AlertTriangle, Circle, Plus, Settings, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress, ProgressIndicator } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 
 interface Task {
@@ -208,12 +207,12 @@ function Header() {
           </div>
           <span className="text-sm text-secondary font-medium">{resolvedTasks} of {totalTasks} resolved</span>
         </div>
-        <Progress value={progressPercent} className="h-2.5 bg-muted">
-          <ProgressIndicator
-            className="bg-gradient-to-r from-primary to-secondary"
+        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full progress-shimmer transition-all duration-500 ease-out"
             style={{ width: `${progressPercent}%` }}
           />
-        </Progress>
+        </div>
         <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-destructive" />
