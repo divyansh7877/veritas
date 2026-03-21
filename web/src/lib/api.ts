@@ -1,5 +1,19 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+// Types matching the backend schema
+export interface BackendTask {
+  id: string;
+  project_id: string | null;
+  title: string;
+  description: string;
+  category: string;
+  status: "Open" | "In Progress" | "Resolved";
+  context: Record<string, unknown>;
+  resolution: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const error = await response.text();
@@ -62,21 +76,16 @@ export async function analyzeProject(projectId?: string) {
 }
 
 // Tasks API
-export async function getTasks(projectId?: string, status?: string): Promise<unknown[]> {
+export async function getTasks(projectId?: string, status?: string): Promise<BackendTask[]> {
   const params = new URLSearchParams();
   if (projectId) params.set("project_id", projectId);
   if (status) params.set("status", status);
 
-  try {
-    const response = await fetch(`${API_BASE}/tasks?${params}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
-    return await response.json();
-  } catch (err) {
-    // Re-throw with more context, but let dashboard handle fallback
-    throw new Error(err instanceof Error ? err.message : "Failed to fetch tasks");
+  const response = await fetch(`${API_BASE}/tasks?${params}`);
+  if (!response.ok) {
+    throw new Error(`HTTP error ${response.status}`);
   }
+  return await response.json();
 }
 
 export async function getTask(taskId: string) {

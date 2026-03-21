@@ -6,7 +6,7 @@ import { ArrowRight, CheckCircle2, ChevronDown, AlertTriangle, Circle, Plus, Set
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getTasks } from "@/lib/api";
+import { getTasks, BackendTask } from "@/lib/api";
 
 interface Task {
   id: string;
@@ -153,10 +153,12 @@ function TaskCard({ task, index }: { task: Task; index: number }) {
               )}
             </div>
             {!isResolved && (
-              <Button variant="ghost" size="sm" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-xs">Resolve</span>
-                <ArrowRight className="h-3.5 w-3.5 ml-1 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <Link href={`/tasks/${task.id}`} className="shrink-0">
+                <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-xs">Resolve</span>
+                  <ArrowRight className="h-3.5 w-3.5 ml-1 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
             )}
           </div>
 

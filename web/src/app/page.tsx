@@ -44,25 +44,6 @@ function HeroSection() {
   );
 }
 
-function SearchSection() {
-  return (
-    <div className="relative group mb-8">
-      <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
-      <div className="relative flex items-center bg-card border-2 border-border/60 rounded-2xl px-5 py-4 shadow-sm focus-within:border-primary/50 focus-within:shadow-md transition-all">
-        <Search className="h-5 w-5 text-muted-foreground/60 mr-4 shrink-0" />
-        <input
-          className="flex-1 bg-transparent border-none text-base focus:ring-0 placeholder:text-muted-foreground/50 text-foreground text-lg"
-          placeholder="Describe the system you're migrating…"
-          type="text"
-        />
-        <kbd className="hidden md:inline-flex h-7 items-center gap-1 rounded-lg border border-border/50 bg-muted/50 px-2.5 text-xs text-muted-foreground font-medium">
-          Enter ↵
-        </kbd>
-      </div>
-    </div>
-  );
-}
-
 interface ImportSectionProps {
   githubUrl: string;
   files: File[];
@@ -185,31 +166,6 @@ function SubmitButton({ loading, disabled, onClick }: SubmitButtonProps) {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="w-full py-8 px-6 border-t border-border/20 bg-muted/20">
-      <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>© 2024 Migration Lens</span>
-          <span className="text-border">·</span>
-          <span>Built with AI</span>
-        </div>
-        <div className="flex items-center gap-6">
-          {["Documentation", "Support", "Privacy", "Terms"].map((item) => (
-            <a
-              key={item}
-              href="#"
-              className="text-xs text-muted-foreground/70 hover:text-foreground transition-colors"
-            >
-              {item}
-            </a>
-          ))}
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 export default function HomePage() {
   const router = useRouter();
   const [githubUrl, setGithubUrl] = useState("");
@@ -255,7 +211,6 @@ export default function HomePage() {
       <main className="flex-grow flex flex-col items-center justify-center px-6 py-16">
         <HeroSection />
         <div className="w-full max-w-xl">
-          <SearchSection />
           <ImportSection
             githubUrl={githubUrl}
             files={files}
@@ -274,7 +229,6 @@ export default function HomePage() {
           />
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
