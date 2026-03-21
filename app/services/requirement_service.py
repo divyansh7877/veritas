@@ -1,23 +1,9 @@
-from app.core.db import get_supabase
+from app.core import db
 
 
-def upsert_requirements(project_id: str, requirements: list[dict]) -> list[dict]:
-    db = get_supabase()
-    rows = [
-        {
-            "project_id": project_id,
-            "department": r["department"],
-            "title": r["title"],
-            "description": r["description"],
-            "status": "Active",
-        }
-        for r in requirements
-    ]
-    result = db.table("requirements").insert(rows).execute()
-    return result.data
+def create_requirement(task_id: str, title: str, description: str):
+    return db.create_requirement(task_id, title, description)
 
 
-def get_requirements(project_id: str) -> list[dict]:
-    db = get_supabase()
-    result = db.table("requirements").select("*").eq("project_id", project_id).execute()
-    return result.data
+def get_requirements(task_id: str) -> list[dict]:
+    return db.list_requirements(task_id)

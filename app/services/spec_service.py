@@ -1,53 +1,16 @@
-from app.core.db import get_supabase
+from app.core import db
 
 
-def create_spec_version(project_id: str, content: str) -> dict:
-    db = get_supabase()
-    existing = (
-        db.table("spec_versions")
-        .select("version_number")
-        .eq("project_id", project_id)
-        .order("version_number", desc=True)
-        .limit(1)
-        .execute()
-    )
-    next_version = (existing.data[0]["version_number"] + 1) if existing.data else 1
-    result = db.table("spec_versions").insert({
-        "project_id": project_id,
-        "version_number": next_version,
-        "content": content,
-        "status": "Draft",
-    }).execute()
-    return result.data[0]
+def create_spec_version(task_id: str, content: str) -> dict:
+    existing = db.list_spec_versions(task_id)
+    next_version = (existing[0]["version_number"] + 1) if existing else 1
+    return db.create_spec_version(task_id, next_version, content)
 
 
-def get_spec_versions(project_id: str) -> list[dict]:
-    db = get_supabase()
-    result = (
-        db.table("spec_versions")
-        .select("*")
-        .eq("project_id", project_id)
-        .order("version_number", desc=True)
-        .execute()
-    )
-    return result.data
-
-
-def get_latest_approved_spec(project_id: str) -> dict | None:
-    db = get_supabase()
-    result = (
-        db.table("spec_versions")
-        .select("*")
-        .eq("project_id", project_id)
-        .eq("status", "Approved")
-        .order("version_number", desc=True)
-        .limit(1)
-        .execute()
-    )
-    return result.data[0] if result.data else None
+def get_spec_versions(task_id: str) -> list[dict]:
+    return db.list_spec_versions(task_id)
 
 
 def update_spec_status(spec_id: str, status: str) -> dict:
-    db = get_supabase()
-    result = db.table("spec_versions").update({"status": status}).eq("id", spec_id).execute()
-    return result.data[0]
+    with db.get_client() as client:
+        return client.patch(f"/spec_versions?id=eq.{spec_id}", json={"status": status}).json()

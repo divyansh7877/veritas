@@ -17,7 +17,7 @@ WRITER_PROMPT = (
     "CONFLICTS:\n{conflicts_json}\n\n"
     "Create a well-structured specification with:\n"
     "1. Executive Summary\n"
-    "2. Requirements by Department\n"
+    "2. Requirements\n"
     "3. Known Conflicts and Resolutions\n"
     "4. Acceptance Criteria\n"
     "5. Open Items\n\n"
@@ -32,39 +32,25 @@ CHANGE_WRITER_PROMPT = (
     "Return the full updated specification in markdown format."
 )
 
-IMPACT_PROMPT = (
-    "Given this change request and the current list of departments involved, "
-    "determine which departments are impacted by this change.\n\n"
-    "CHANGE REQUEST:\n{change_description}\n\n"
-    "DEPARTMENTS: Environmental, C-Suite, Engineering\n\n"
-    "Return a JSON array of impacted department names. "
-    "Return ONLY valid JSON, no other text."
-)
-
-MOCK_SPEC = """# Project Specification v{version}
+MOCK_SPEC = """# Specification v{version}
 
 ## Executive Summary
-This specification outlines requirements gathered from Environmental, Engineering, and C-Suite stakeholders.
+This specification outlines the gathered requirements.
 
-## Requirements by Department
+## Requirements
 
-### Environmental
+### Requirements
 - Emissions Cap: Total facility emissions must not exceed 500 tons CO2e per year.
-
-### Engineering
 - Load Bearing Capacity: Primary structure must support 10,000 kg per floor.
 
-### C-Suite
-- ROI Timeline: Project must achieve positive ROI within 18 months of completion.
-
 ## Known Conflicts
-- The emissions cap conflicts with engineering load requirements regarding material choices.
+- The emissions cap may conflict with load requirements regarding material choices.
 
 ## Acceptance Criteria
 - All requirements must be met before sign-off.
 
 ## Open Items
-- Material selection pending environmental impact assessment.
+- Material selection pending assessment.
 """
 
 
@@ -96,22 +82,3 @@ def revise_spec(current_spec: str, change_description: str) -> str:
         ),
     )
     return result.text
-
-
-def detect_impacted_departments(change_description: str) -> list[str]:
-    if is_mock():
-        return ["Environmental", "Engineering"]
-
-    model = get_model()
-    result = generate_text(
-        model=model,
-        prompt=IMPACT_PROMPT.format(change_description=change_description),
-    )
-    try:
-        cleaned = _extract_json(result.text)
-        parsed = json.loads(cleaned)
-        if isinstance(parsed, list):
-            return parsed
-        return ["Environmental", "C-Suite", "Engineering"]
-    except json.JSONDecodeError:
-        return ["Environmental", "C-Suite", "Engineering"]
