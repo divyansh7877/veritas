@@ -11,9 +11,11 @@ import { getTask, sendTaskMessage, getTaskConversations, type BackendTask, type 
 
 function ConversationCard({ conversation }: { conversation: Conversation }) {
   const hasAnswer = conversation.answer && conversation.answer.trim() !== "";
+  const hasQuestion = conversation.question && conversation.question.trim() !== "";
+  const isAgentOnly = !hasQuestion && hasAnswer;
 
   return (
-    <Card className={hasAnswer ? "opacity-80" : ""}>
+    <Card className={hasQuestion && hasAnswer ? "opacity-80" : ""}>
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
@@ -28,16 +30,18 @@ function ConversationCard({ conversation }: { conversation: Conversation }) {
             )}
           </div>
           <div className="flex-1 min-w-0 space-y-4">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">You</p>
-              <p className="text-sm font-medium text-foreground">
-                {conversation.question || "No question yet"}
-              </p>
-            </div>
+            {hasQuestion && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">You</p>
+                <p className="text-sm font-medium text-foreground">
+                  {conversation.question}
+                </p>
+              </div>
+            )}
             {hasAnswer && (
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Agent</p>
-                <p className="text-sm text-foreground bg-muted/50 rounded-lg p-3">
+                <p className={`text-sm text-foreground ${isAgentOnly ? "" : "bg-muted/50 rounded-lg p-3"}`}>
                   {conversation.answer}
                 </p>
               </div>
